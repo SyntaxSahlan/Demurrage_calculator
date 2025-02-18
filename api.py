@@ -4,10 +4,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from fastapi_cache import FastAPICache
-from fastapi_cache.decorator import cache
-from fastapi_cache.backends.redis import RedisBackend
-from redis import asyncio as aioredis
 from loguru import logger
 from prometheus_client import Counter, Histogram
 from starlette_exporter import PrometheusMiddleware, handle_metrics
@@ -59,10 +55,6 @@ async def read_root():
 if os.path.exists('static'):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.post("/calculate-demurrage", response_model=DemurrageResponse)
-@cache(
-    expire=3600,
-    key_builder=lambda demurrage_request, **kwargs: f"demurrage:{demurrage_request.container_type}:{demurrage_request.container_size}:{demurrage_request.days}"
-)
 async def calculate_demurrage_charge(demurrage_request: DemurrageRequest):
     try:
         logger.info(f"Processing demurrage calculation for {demurrage_request.container_type} {demurrage_request.container_size} for {demurrage_request.days} days")
@@ -94,13 +86,6 @@ async def calculate_demurrage_charge(demurrage_request: DemurrageRequest):
     except Exception as e:
         logger.error(f"Error calculating demurrage: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
-
-@app.on_event("startup")
-async def startup():
-    # Initialize FastAPI cache with Redis backend
-    redis = aioredis.from_url("redis://localhost", encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
-    logger.info("Application started, cache initialized")
 
 if __name__ == "__main__":
     import uvicorn

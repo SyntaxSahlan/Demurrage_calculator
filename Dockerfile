@@ -20,12 +20,12 @@ RUN useradd -m -u 1000 appuser && \
 USER appuser
 
 # Expose port
-EXPOSE 8006
+EXPOSE 8000
 
 # Configure environment variables with defaults
-ENV PORT=8006 \
+ENV PORT=8000 \
     WORKERS=4 \
-    LOG_LEVEL=INFO \
+    LOG_LEVEL=info \
     MAX_REQUESTS=10000
 
 # Start with better worker configuration and logging
