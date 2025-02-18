@@ -15,7 +15,7 @@ class ContainerSize(str, Enum):
 class DemurrageRequest(BaseModel):
     container_type: ContainerType
     container_size: ContainerSize
-    days: int = Field(gt=0)
+    days: int = Field(ge=0)
 
 class ChargeBreakdown(BaseModel):
     period_name: str

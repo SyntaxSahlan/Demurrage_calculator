@@ -28,9 +28,6 @@ if os.path.exists('static'):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.post("/calculate-demurrage", response_model=DemurrageResponse)
 async def calculate_demurrage_charge(request: DemurrageRequest):
-    if request.days < 0:
-        raise HTTPException(status_code=400, detail="Days cannot be negative")
-    
     total_charge, breakdown_dict = calculate_demurrage(
         request.container_type,
         request.container_size,
