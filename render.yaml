@@ -6,6 +6,7 @@ services:
     region: oregon
     branch: main
     healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         value: 8000
