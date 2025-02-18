@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demurrage Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: #f9f9f9;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        select, input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 2rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        .error {
+            color: #dc3545;
+            padding: 0.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Demurrage Calculator</h1>
+        <form id="calculatorForm">
+            <div class="form-group">
+                <label for="containerType">Container Type:</label>
+                <select id="containerType" required>
+                    <option value="FULL">FULL</option>
+                    <option value="REEFER">REEFER</option>
+                    <option value="IMCO">IMCO</option>
+                    <option value="EMPTY">EMPTY</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="containerSize">Container Size:</label>
+                <select id="containerSize" required>
+                    <option value="20">20 ft</option>
+                    <option value="40">40 ft</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="days">Number of Days:</label>
+                <input type="number" id="days" min="1" required>
+            </div>
+            <button type="submit">Calculate Demurrage</button>
+        </form>
+        <div id="error" class="error"></div>
+        <div id="result">
+            <h3>Calculation Results:</h3>
+            <p><strong>Total Charge:</strong> <span id="totalCharge"></span> KWD</p>
+            <div id="breakdown"></div>
+        </div>
+    </div>
+
+    <script>
+        // Determine the base URL based on the environment
+        const baseUrl = window.location.origin;
+        document.getElementById('calculatorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const containerType = document.getElementById('containerType').value;
+            const containerSize = document.getElementById('containerSize').value;
+            const days = parseInt(document.getElementById('days').value);
+            
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const response = await fetch(`${baseUrl}/calculate-demurrage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        container_type: containerType,
+                        container_size: containerSize,
+                        days: parseInt(days)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Calculation failed. Please check your inputs.');
+                }
+
+                const data = await response.json();
+                
+                resultHtml = `<h3>Total Charge: ${data.total_charge.toFixed(2)} KWD</h3>`;
+                resultHtml += '<h4>Breakdown:</h4><ul>';
+
+                for (const [periodName, details] of Object.entries(data.breakdown)) {
+                    resultHtml += `<li>${periodName}: ${details.charge.toFixed(2)} KWD (${details.days} days at rate ${details.rate.toFixed(2)} KWD/day)</li>`;
+                }
+
+                resultHtml += '</ul>';
+                document.getElementById('result').innerHTML = resultHtml;
+                
+                errorDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+
